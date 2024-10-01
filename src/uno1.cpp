@@ -74,7 +74,7 @@ void plot(const char *varName, T y, const char *unit = NULL)
 
 void setup()
 { // Codigo de configuração
-  Serial.begin(19200);
+  Serial.begin(9600);
   pinMode(pinANALOG, INPUT);
   DigitalFilter_init(&filter1,FILTER_ORDER1,filter_taps1);  
 }

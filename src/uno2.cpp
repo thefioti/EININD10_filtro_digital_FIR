@@ -153,11 +153,12 @@ void loop()
   {
     previousTimePrintMS = currentMilis;
     int16_t analog_Value = analogRead(pinANALOG);
-    // DigitalFilter_put(&filter1, analog_Value);
+
+    //DigitalFilter_put(&filter1, analog_Value);
     DigitalFilter_put(&filter2, analog_Value);
 
     plot<int16_t>("normal", analog_Value);
-    // plot<double>("filtrado1", DigitalFilter_get(&filter1));
+    //plot<double>("filtrado1", DigitalFilter_get(&filter1));
     plot<double>("filtrado2", DigitalFilter_get(&filter2));
   }
 }
