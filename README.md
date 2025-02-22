@@ -43,9 +43,11 @@ Filtros digitais são algoritmos utilizados para processar sinais, removendo ou 
 
 O filtro FIR é definido pela equação de convolução:
 
-\[
+
+$$
 y[n] = \sum_{i=0}^{N-1} b[i] \cdot x[n-i]
-\]
+$$
+
 
 - **x[n]:** Amostra de entrada.
 - **y[n]:** Amostra de saída.
@@ -93,14 +95,14 @@ Insira o seguinte diagrama dentro de um bloco de código usando os delimitadores
 
 O filtro IIR é definido pela equação de diferença:
 
-\[
+$$
 y[n] = \sum_{i=0}^{M} b[i] \cdot x[n-i] - \sum_{j=1}^{N} a[j] \cdot y[n-j]
-\]
+$$
 
 - **x[n]:** Amostra de entrada.
 - **y[n]:** Amostra de saída.
 - **b[i]:** Coeficientes feedforward (numerador).
-- **a[j]:** Coeficientes feedback (denominador), com \(a_0 = 1\) por convenção.
+- **a[j]:** Coeficientes feedback (denominador), com $ a_0 = 1 $ por convenção.
 
 Embora possam alcançar desempenho similar aos filtros FIR com menos recursos, os filtros IIR requerem cuidados para evitar instabilidade.
 
@@ -112,24 +114,24 @@ Uma implementação eficiente para filtros IIR é o **Direct Form II Transposto*
 
 Considere um filtro de segunda ordem com coeficientes:
 
-- **Coeficientes Feedforward (b):** \(b_0,\, b_1,\, b_2\)
-- **Coeficientes Feedback (a):** \(a_0 = 1,\, a_1,\, a_2\)
+- **Coeficientes Feedforward (b):** $b_0,\, b_1,\, b_2 $
+- **Coeficientes Feedback (a):** $a_0 = 1,\, a_1,\, a_2$
 
-O processamento de uma nova amostra \(x[n]\) ocorre em duas etapas:
+O processamento de uma nova amostra $x[n]$ ocorre em duas etapas:
 
 1. **Cálculo da Saída:**  
-   \[
+   $$
    y[n] = b_0 \cdot x[n] + d_0
-   \]
-   onde \(d_0\) é o primeiro elemento do vetor de estado.
+   $$
+   onde $d_0$ é o primeiro elemento do vetor de estado.
 
 2. **Atualização do Vetor de Estado:**  
-   \[
+   $$
    d_0 \leftarrow d_1 + b_1 \cdot x[n] - a_1 \cdot y[n]
-   \]
-   \[
+   $$
+   $$
    d_1 \leftarrow b_2 \cdot x[n] - a_2 \cdot y[n]
-   \]
+   $$
 
 Esta estrutura usa apenas um vetor de estado de tamanho 2, otimizando a memória e distribuindo melhor os erros de arredondamento.
 
@@ -178,15 +180,15 @@ O **Direct Form II Transposto** é uma técnica para implementar filtros IIR que
 
 Um filtro IIR é definido pela seguinte equação de diferença:
 
-\[
+$$
 y[n] = b_0 \cdot x[n] + b_1 \cdot x[n-1] + \dots + b_{M} \cdot x[n-M] - a_1 \cdot y[n-1] - \dots - a_{N} \cdot y[n-N]
-\]
+$$
 
 Onde:
 - **x[n]:** Amostra de entrada atual.
 - **y[n]:** Amostra de saída.
 - **b[i]:** Coeficientes do numerador (feedforward).
-- **a[i]:** Coeficientes do denominador (feedback), com \(a_0 = 1\) por convenção.
+- **a[i]:** Coeficientes do denominador (feedback), com $a_0 = 1$ por convenção.
 
 ### Direct Form II vs. Direct Form II Transposto
 
@@ -200,24 +202,24 @@ Onde:
 
 Considere um filtro de segunda ordem com os seguintes coeficientes:
 
-- **Coeficientes Feedforward (b):** \([b_0,\, b_1,\, b_2]\)
-- **Coeficientes Feedback (a):** \([1,\, a_1,\, a_2]\)
+- **Coeficientes Feedforward (b):** $[b_0,\, b_1,\, b_2]$
+- **Coeficientes Feedback (a):** $[1,\, a_1,\, a_2]$
 
 #### Etapas de Processamento
 
 1. **Cálculo da Saída:**  
-   \[
+   $$
    y[n] = b_0 \cdot x[n] + d_0
-   \]
+   $$
    onde \(d_0\) é o primeiro elemento do vetor de estado.
 
 2. **Atualização do Vetor de Estado:**  
-   \[
+   $$
    d_0 \leftarrow d_1 + b_1 \cdot x[n] - a_1 \cdot y[n]
-   \]
-   \[
+   $$
+   $$
    d_1 \leftarrow b_2 \cdot x[n] - a_2 \cdot y[n]
-   \]
+   $$
 
 Dessa forma, utilizando um vetor de estado de tamanho 2, o filtro processa a nova amostra e atualiza os estados para os próximos cálculos.
 
@@ -226,35 +228,35 @@ Dessa forma, utilizando um vetor de estado de tamanho 2, o filtro processa a nov
 Imagine um filtro com os coeficientes:
 
 - **Feedforward (b):**  
-  \( b_0 = 0.2929,\quad b_1 = 0.5858,\quad b_2 = 0.2929 \)
+  $ b_0 = 0.2929,\quad b_1 = 0.5858,\quad b_2 = 0.2929 $
 - **Feedback (a):**  
-  \( a_0 = 1,\quad a_1 = 0,\quad a_2 = 0.1716 \)
+  $ a_0 = 1,\quad a_1 = 0,\quad a_2 = 0.1716 $
 
 #### Cenário Inicial
-- Estados \(d_0\) e \(d_1\) iniciam com valor 0.
+- Estados $d_0$ e $d_1$ iniciam com valor 0.
 
 #### Processamento de uma Nova Amostra
-- **Entrada:** \( x[n] = 1.0 \)
+- **Entrada:** $x[n] = 1.0$
 
 ##### Cálculo da Saída
-\[
+$$
 y[n] = 0.2929 \times 1.0 + 0 \quad (\text{pois } d_0 = 0)
-\]
-\[
+$$
+$$
 y[n] = 0.2929
-\]
+$$
 
 ##### Atualização dos Estados
-- **Atualização de \(d_0\):**
-\[
+- **Atualização de $d_0$:**
+$$
 d_0 \leftarrow 0 + 0.5858 \times 1.0 - 0 \times 0.2929 = 0.5858
-\]
-- **Atualização de \(d_1\):**
-\[
+$$
+- **Atualização de $d_1$:**
+$$
 d_1 \leftarrow 0.2929 \times 1.0 - 0.1716 \times 0.2929 \approx 0.2929 - 0.0501 = 0.2428
-\]
+$$
 
-Esses novos valores de \(d_0\) e \(d_1\) serão utilizados para processar a próxima amostra.
+Esses novos valores de $d_0$ e $d_1$ serão utilizados para processar a próxima amostra.
 
 ### Diagrama Ilustrativo
 
@@ -292,7 +294,7 @@ Insira o seguinte diagrama dentro de um bloco de código usando os delimitadores
 ### Vantagens
 
 - **Eficiência de Memória:**  
-  Utiliza um único vetor de estado com tamanho \(\max(nb, na) - 1\) em vez de buffers separados para entradas e saídas.
+  Utiliza um único vetor de estado com tamanho $\max(nb, na) - 1$ em vez de buffers separados para entradas e saídas.
 - **Estabilidade Numérica:**  
   A estrutura transposta distribui melhor os erros de arredondamento, o que é especialmente útil em implementações com precisão limitada.
 - **Implementação Simplificada:**  
@@ -309,12 +311,12 @@ O **Direct Form II Transposto** é uma abordagem poderosa para implementar filtr
 O repositório contém implementações em C puro para sistemas embarcados:
 
 - **Filtro FIR:**  
-  - Arquivos como `fir_filter.h` e `fir_filter.c` demonstram a implementação do filtro FIR.  
-  - Um exemplo prático está disponível no arquivo `ExampleFIR.ino` para uso com Arduino.
+  - Arquivo como `fir_filter.h` demonstra a implementação do filtro FIR.  
+  - Um exemplo prático está disponível no arquivo `uno_fir.cpp` para uso com Arduino.
   
 - **Filtro IIR (Direct Form II Transposto):**  
-  - Arquivos como `iir_filter.h` e `iir_filter.c` mostram a implementação do filtro IIR utilizando a estrutura Direct Form II Transposto.  
-  - O arquivo `ExampleIIR.ino` apresenta um exemplo prático com Arduino.
+  - Arquivo como `iir_filter.h` mostra a implementação do filtro IIR utilizando a estrutura Direct Form II Transposto.  
+  - O arquivo `uno_iiR.cpp` apresenta um exemplo prático com Arduino.
 
 ---
 
