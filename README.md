@@ -228,9 +228,13 @@ Dessa forma, utilizando um vetor de estado de tamanho 2, o filtro processa a nov
 Imagine um filtro com os coeficientes:
 
 - **Feedforward (b):**  
-  $ b_0 = 0.2929,\quad b_1 = 0.5858,\quad b_2 = 0.2929 $
+  $$
+  b_0 = 0.2929,\quad b_1 = 0.5858,\quad b_2 = 0.2929 
+  $$
 - **Feedback (a):**  
-  $ a_0 = 1,\quad a_1 = 0,\quad a_2 = 0.1716 $
+  $$
+  a_0 = 1,\quad a_1 = 0,\quad a_2 = 0.1716 
+  $$
 
 #### Cenário Inicial
 - Estados $d_0$ e $d_1$ iniciam com valor 0.
