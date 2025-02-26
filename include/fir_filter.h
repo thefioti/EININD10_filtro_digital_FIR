@@ -42,7 +42,6 @@ void FIRFilter_init(FIRFilter *filter, float *buffer, float *coeffiArray, uint8_
     filter->coeffiArray = coeffiArray;
     filter->coeffiSize = coeffiSize;
     filter->index = 0;
-
     // Inicializa o buffer com zeros.
     for (uint8_t i = 0; i < coeffiSize; i++) {
         filter->buffer[i] = 0.0f;

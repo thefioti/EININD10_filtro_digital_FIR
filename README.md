@@ -137,8 +137,6 @@ Esta estrutura usa apenas um vetor de estado de tamanho 2, otimizando a memória
 
 ### Diagrama do Filtro IIR (Direct Form II Transposto)
 
-Insira o seguinte diagrama dentro de um bloco de código usando os delimitadores >>>:
-
 ```
          x[n]
            │
@@ -211,7 +209,7 @@ Considere um filtro de segunda ordem com os seguintes coeficientes:
    $$
    y[n] = b_0 \cdot x[n] + d_0
    $$
-   onde \(d_0\) é o primeiro elemento do vetor de estado.
+   onde $d_0$ é o primeiro elemento do vetor de estado.
 
 2. **Atualização do Vetor de Estado:**  
    $$
@@ -263,8 +261,6 @@ $$
 Esses novos valores de $d_0$ e $d_1$ serão utilizados para processar a próxima amostra.
 
 ### Diagrama Ilustrativo
-
-Insira o seguinte diagrama dentro de um bloco de código usando os delimitadores >>>:
 
 ```
      x[n]
