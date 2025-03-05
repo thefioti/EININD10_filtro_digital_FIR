@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.pyplot import subplots, show
 from scipy.signal import firwin, freqz
 
-def findFilterDigitalFir(fDesejada, ordem, fs, filterType="lowpass", desvio=0.05, isBP=True):
+def findDigitalFilterFIRByTargetFreq(fDesejada, ordem, fs, filterType="lowpass", desvio=0.05, isBP=True):
     """
     Calcula os coeficientes de um filtro FIR digital utilizando a janela Hamming, 
     ajustando iterativamente a frequência de corte (fc) para atender a um critério de desvio 
@@ -132,7 +132,7 @@ def findFilterDigitalFir(fDesejada, ordem, fs, filterType="lowpass", desvio=0.05
 # - Ordem do filtro: 50
 # - Frequência de amostragem: 100 Hz
 # - Filtro passa-baixa com a frequência desejada na banda de passagem
-taps = findFilterDigitalFir(10, 50, 100, isBP=True)
+taps = findDigitalFilterFIRByTargetFreq(10, 50, 100, isBP=True)
 
 print("Coeficientes do filtro:")
 print(", ".join(str(coef) for coef in taps))

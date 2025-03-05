@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def calcular_e_plotar_filtro_analogico(fDesejada, ordem, filterType, desvio, isBP):
+def findAnalogFilterByTargetFreq(fDesejada, ordem, filterType, desvio, isBP):
     """
     Calcula a frequência de corte (omega_c) de um filtro analógico Butterworth, 
     plota a resposta em frequência com as linhas que indicam:
@@ -115,5 +115,5 @@ if __name__ == '__main__':
     desvio = 0.05      # 5% de desvio
     isBP = True        # True para banda de passagem; False para rejeição
 
-    fc = calcular_e_plotar_filtro_analogico(fDesejada, ordem, filterType, desvio, isBP)
+    fc = findAnalogFilterByTargetFreq(fDesejada, ordem, filterType, desvio, isBP)
     print("Frequência de Corte escolhida (Hz):", fc)
