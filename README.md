@@ -1,4 +1,4 @@
-# Filtros Digitais: FIR e IIR & Direct Form II Transposed Filter Implementation
+# EININDI - Filtros Digitais: FIR e IIR & Direct Form II Transposed Filter Implementation
 
 Este repositório apresenta uma visão geral sobre filtros digitais, com foco em implementações de filtros FIR e IIR para sistemas embarcados (como o Arduino). Além disso, inclui uma explicação detalhada sobre o algoritmo **Direct Form II Transposto** para filtros IIR, ressaltando sua eficiência no uso de memória e robustez numérica. Aqui você encontrará explicações conceituais, diagramas ilustrativos e exemplos de código em C puro, sem uso de alocação dinâmica de memória.
 
