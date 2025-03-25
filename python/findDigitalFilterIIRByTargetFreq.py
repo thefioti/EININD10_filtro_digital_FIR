@@ -15,7 +15,7 @@ def findDigitalFilterIIRByTargetFreq(fDesejada, ordem, fs, filterType, desvio, i
     Retorna:
       b, a : Coeficientes do filtro IIR.
     """
-    # Obtém frequência de corte + frequência limite + complementar
+    # Obtém frequência de corte, borda da banda e complementar
     fc_analog, freq_limite, f_complementar_hz = findAnalogFilterByTargetFreq(
         fDesejada, ordem, filterType, desvio, isBP
     )
@@ -28,33 +28,40 @@ def findDigitalFilterIIRByTargetFreq(fDesejada, ordem, fs, filterType, desvio, i
     b, a = butter(ordem, normal_fc, btype=filterType)
 
     # Resposta em frequência
-    w, h = freqz(b, a, whole=True)
+    w, h = freqz(b, a, worN=2048)
     freqs_hz = w * fs / (2 * np.pi)
+    h_mag = np.abs(h)
 
     # Plot
     fig, ax = subplots(figsize=(14, 5))
-    ax.plot(freqs_hz, np.abs(h), label='Resposta do Filtro IIR', color='b')
+    ax.plot(freqs_hz, h_mag, label='Resposta do Filtro IIR', color='blue')
     ax.set_xlabel('Frequência (Hz)')
     ax.set_ylabel('Magnitude')
     ax.set_title('Filtro IIR - Resposta em Frequência')
 
-    # Plot das linhas
+    # Linhas verticais
     print("Frequência Desejada [Amarelo]:", fDesejada)
-    ax.axvline(fDesejada, color='y', linestyle='--', label='Frequência Desejada')
+    ax.axvline(fDesejada, color='yellow', linestyle='--', label='Frequência Desejada')
 
     print("Frequência de Corte [Verde]:", fc_analog)
-    ax.axvline(fc_analog, color='g', linestyle='--', label='Frequência de Corte')
+    ax.axvline(fc_analog, color='green', linestyle='--', label='Frequência de Corte')
 
     if isBP:
         print("Frequência limite da Banda de Passagem [Vermelho]:", freq_limite)
-        ax.axvline(freq_limite, color='r', linestyle='--', label='Banda de Passagem')
+        ax.axvline(freq_limite, color='red', linestyle='--', label='Limite da Banda de Passagem')
         print("Frequência Complementar (Rejeição) [Roxa]:", f_complementar_hz)
-        ax.axvline(f_complementar_hz, color='purple', linestyle='--', label='Banda de Rejeição')
+        ax.axvline(f_complementar_hz, color='purple', linestyle='--', label='Limite da Banda de Rejeição')
     else:
         print("Frequência limite da Banda de Rejeição [Vermelho]:", freq_limite)
-        ax.axvline(freq_limite, color='r', linestyle='--', label='Banda de Rejeição')
+        ax.axvline(freq_limite, color='red', linestyle='--', label='Limite da Banda de Rejeição')
         print("Frequência Complementar (Passagem) [Roxa]:", f_complementar_hz)
-        ax.axvline(f_complementar_hz, color='purple', linestyle='--', label='Banda de Passagem')
+        ax.axvline(f_complementar_hz, color='purple', linestyle='--', label='Limite da Banda de Passagem')
+
+    # Ajuste do eixo x
+    f_min_plot = max(0, min(fDesejada, fc_analog, freq_limite, f_complementar_hz) * 0.8)
+    f_max_plot = min(fs / 2, max(fDesejada, fc_analog, freq_limite, f_complementar_hz) * 1.5)
+    ax.set_xlim(f_min_plot, f_max_plot)
+    ax.set_ylim(0, 1.1)
 
     ax.grid(True)
     ax.legend()
@@ -65,14 +72,14 @@ def findDigitalFilterIIRByTargetFreq(fDesejada, ordem, fs, filterType, desvio, i
 # Exemplo de uso:
 if __name__ == '__main__':
     b, a = findDigitalFilterIIRByTargetFreq(
-            fDesejada = 1000,        # Hz
-            ordem = 2,
-            fs = 20000,              # Frequência de amostragem
-            filterType = 'lowpass',  # 'lowpass' ou 'highpass'
-            desvio = 0.05,
-            isBP = True              # True para banda de passagem; False para rejeição
+        fDesejada=1000,         # Frequência de interesse
+        ordem=2,
+        fs=20000,               # Frequência de amostragem
+        filterType='lowpass',   # 'lowpass' ou 'highpass'
+        desvio=0.05,
+        isBP=False              # fDesejada está na banda de REJEIÇÃO
     )
-    print("Coeficientes do numerador (b):")
-    print(", ".join(str(coef) for coef in b))
+    print("\nCoeficientes do numerador (b):")
+    print(", ".join(f"{coef:.6f}" for coef in b))
     print("Coeficientes do denominador (a):")
-    print(", ".join(str(coef) for coef in a))
+    print(", ".join(f"{coef:.6f}" for coef in a))
