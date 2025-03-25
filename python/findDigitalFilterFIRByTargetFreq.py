@@ -3,136 +3,105 @@ from matplotlib.pyplot import subplots, show
 from scipy.signal import firwin, freqz
 
 def findDigitalFilterFIRByTargetFreq(fDesejada, ordem, fs, filterType="lowpass", desvio=0.05, isBP=True):
-    """
-    Calcula os coeficientes de um filtro FIR digital utilizando a janela Hamming, 
-    ajustando iterativamente a frequência de corte (fc) para atender a um critério de desvio 
-    na resposta em frequência. Em seguida, plota a resposta em frequência com marcações das frequências de interesse.
-    
-    Parâmetros:
-      fDesejada   : Frequência desejada para a banda (Hz).
-      ordem       : Ordem do filtro (número de coeficientes).
-      fs          : Frequência de amostragem (Hz).
-      filterType  : Tipo do filtro - 'lowpass' para passa-baixa ou 'highpass' para passa-alta.
-      desvio      : Desvio máximo permitido na amplitude (por exemplo, 0.05 para 5%).
-      isBP        : Booleano. Se True, fDesejada é da banda de passagem; se False, da banda de rejeição.
-    
-    Retorna:
-      taps : Array com os coeficientes do filtro FIR.
-    """
-    # Converte a frequência desejada de Hz para radianos por amostra
-    f_radians = fDesejada * (2 * np.pi) / fs
+    if not (0 < fDesejada < fs / 2):
+        raise ValueError(f"fDesejada={fDesejada} Hz deve estar entre 0 e fs/2 ({fs/2} Hz).")
 
-    # Define a condição de busca para o cutoff 'fc'
-    # Para passa-baixa, a condição é isBP; para passa-alta, inverte o valor de isBP
-    condition = isBP if filterType == "lowpass" else not isBP
+    M_target = 1 - desvio if isBP else desvio
 
-    # Define o intervalo de variação para 'fc' com base na condição
-    if condition:
-        fc_max = min(10 * fDesejada, fs / 2)
+    # Define a faixa de busca de fc de acordo com o tipo e banda
+    epsilon = 1e-3
+    nyq = fs / 2
+    if (filterType == "lowpass" and isBP) or (filterType == "highpass" and not isBP):
+        fc_range = np.linspace(fDesejada, nyq - epsilon, 10000)
     else:
-        fc_max = fDesejada // 20
+        fc_range = np.linspace(1, min(fDesejada, nyq - epsilon), 10000)
 
-    # Gera os valores de fc para testar
-    fc_values = np.linspace(fDesejada, fc_max, 10000, endpoint=False)
-    fc_escolhido = None
+    melhor_fc = None
+    melhor_erro = np.inf
 
-    # Itera sobre os possíveis valores de fc para encontrar o que atende ao critério de desvio
-    for fc in fc_values:
-        # Calcula os coeficientes do filtro com a janela Hamming
+    for fc in fc_range:
         taps = firwin(numtaps=ordem, cutoff=fc, fs=fs, window="hamming", pass_zero=filterType)
-        # Calcula a resposta em frequência do filtro com 1024 pontos
-        w, h = freqz(taps, worN=1024)
-        
-        # Ajusta os arrays dependendo do tipo de filtro
-        if condition:
-            h_magnitude = np.abs(h)
-            w_magnitude = np.abs(w)
-        else:
-            h_magnitude = np.abs(h)[::-1]
-            w_magnitude = np.abs(w)[::-1]
-        
-        # Define a condição de busca para o índice desejado
-        if isBP:
-            indices = np.where(h_magnitude <= (1 - desvio))[0]
-        else:
-            indices = np.where(h_magnitude >= desvio)[0]
-        
-        # Se nenhum índice satisfizer a condição, passa para o próximo valor de fc
-        if indices.size == 0:
-            continue
-        idx = indices[0]
+        w, h = freqz(taps, worN=4096)
+        f_hz = w * fs / (2 * np.pi)
+        h_mag = np.abs(h)
 
-        # Verifica se a frequência associada ao índice atende ao critério comparado com f_radians
-        if condition:
-            if w_magnitude[idx] >= f_radians:
-                fc_escolhido = fc
-                break
-        else:
-            if w_magnitude[idx] <= f_radians:
-                fc_escolhido = fc
-                break
+        # Erro em relação à magnitude desejada em fDesejada
+        idx = np.argmin(np.abs(f_hz - fDesejada))
+        mag = h_mag[idx]
+        erro = abs(mag - M_target)
 
-    # Se nenhum fc adequado foi encontrado, usa o último valor testado e emite um aviso
-    if fc_escolhido is None:
-        fc_escolhido = fc_values[-1]
-        print("Aviso: Nenhum fc que atenda o critério foi encontrado. Usando fc =", fc_escolhido)
+        if erro < melhor_erro:
+            melhor_erro = erro
+            melhor_fc = fc
 
-    # Recalcula os coeficientes e a resposta em frequência com o fc escolhido
-    taps = firwin(numtaps=ordem, cutoff=fc_escolhido, fs=fs, window="hamming", pass_zero=filterType)
-    w, h = freqz(taps, worN=1024)
+    fc_encontrado = melhor_fc
 
-    # Determina os índices para as frequências limite
-    if condition:
-        indices_inicial = np.where(np.abs(h) <= (1 - desvio))[0]
-        indices_final   = np.where(np.abs(h) <= desvio)[0]
-    else:
-        indices_inicial = np.where(np.abs(h) >= desvio)[0]
-        indices_final   = np.where(np.abs(h) >= (1 - desvio))[0]
-    
-    # Caso não encontre os índices, utiliza os extremos do array
-    idx_inicial = indices_inicial[0] if indices_inicial.size > 0 else 0
-    idx_final   = indices_final[0] if indices_final.size > 0 else len(w) - 1
+    # Recalcula com fc encontrado
+    taps = firwin(numtaps=ordem, cutoff=fc_encontrado, fs=fs, window="hamming", pass_zero=filterType)
+    w, h = freqz(taps, worN=4096)
+    f_hz = w * fs / (2 * np.pi)
+    h_mag = np.abs(h)
 
-    # Converte os índices em frequências (Hz)
-    f_limite_inicial = w[idx_inicial] * fs / (2 * np.pi)
-    f_limite_final   = w[idx_final] * fs / (2 * np.pi)
-    freqs_hz = w * fs / (2 * np.pi)
-
-    # Configura o gráfico da resposta em frequência
-    fig, ax = subplots(figsize=(20, 6))
-    ax.plot(freqs_hz, np.abs(h), 'b', label='Resposta em Frequência')
-    ax.set_xlabel('Frequência (Hz)')
-    ax.set_ylabel('Magnitude')
-
-    # Define as frequências de interesse para o plot, dependendo do tipo de filtro
+    # Encontra f_banda e f_comp com erro mínimo
     if isBP:
-        banda_passagem = f_limite_inicial
-        banda_bloqueio = f_limite_final
+        erro_banda = np.abs(h_mag - (1 - desvio))
+        erro_comp  = np.abs(h_mag - desvio)
     else:
-        banda_passagem = f_limite_final
-        banda_bloqueio = f_limite_inicial
+        erro_banda = np.abs(h_mag - desvio)
+        erro_comp  = np.abs(h_mag - (1 - desvio))
 
-    # Plota as linhas verticais e imprime as informações
-    print("Frequência limite da Banda de Passagem [Vermelho]:", banda_passagem)
-    ax.axvline(banda_passagem, color='r', label='Banda de Passagem')
-    print("Frequência de Corte [Verde]:", fc_escolhido)
-    ax.axvline(fc_escolhido, color='g', label='Frequência de Corte')
-    print("Frequência limite da Banda de Bloqueio [Amarelo]:", banda_bloqueio)
-    ax.axvline(banda_bloqueio, color='y', label='Banda de Bloqueio')
+    idx_banda = np.argmin(erro_banda)
+    idx_comp  = np.argmin(erro_comp)
 
-    ax.grid()
+    f_banda = f_hz[idx_banda]
+    f_comp  = f_hz[idx_comp]
+
+    # Impressões
+    print("✅ Resultado:")
+    print("Frequência Desejada [Amarelo]:", fDesejada)
+    print("Frequência de Corte [Verde]:", fc_encontrado)
+    print(("Limite da Banda de Passagem" if isBP else "Limite da Banda de Rejeição") + " [Vermelho]:", f_banda)
+    print("Frequência Complementar (banda oposta) [Roxa]:", f_comp)
+
+    # Plot
+    # Gráfico com rótulos corretos
+    fig, ax = subplots(figsize=(14, 5))
+    ax.plot(f_hz, h_mag, label='Resposta em Frequência', color='blue')
+    ax.axvline(fDesejada, color='yellow', linestyle='--', label='Frequência Desejada')
+    ax.axvline(fc_encontrado, color='green', linestyle='--', label='Frequência de Corte')
+
+    # Limite da banda de interesse (principal)
+    if isBP:
+        ax.axvline(f_banda, color='red', linestyle='--', label='Limite da Banda de Passagem')
+        ax.axvline(f_comp, color='purple', linestyle='--', label='Limite da Banda de Rejeição')
+    else:
+        ax.axvline(f_banda, color='red', linestyle='--', label='Limite da Banda de Rejeição')
+        ax.axvline(f_comp, color='purple', linestyle='--', label='Limite da Banda de Passagem')
+
+
+    f_plot_min = max(0, min(f_banda, f_comp, fDesejada, fc_encontrado) * 0.8)
+    f_plot_max = min(fs / 2, max(f_banda, f_comp, fDesejada, fc_encontrado) * 1.2)
+    ax.set_xlim(f_plot_min, f_plot_max)
+    ax.set_ylim(0, 1.1)
+    ax.set_xlabel("Frequência (Hz)")
+    ax.set_ylabel("Magnitude")
+    ax.set_title("Filtro FIR - Resposta em Frequência")
+    ax.grid(True)
     ax.legend()
     show()
 
     return taps
 
-# Exemplo de uso:
-# Parâmetros:
-# - Frequência desejada: 10 Hz
-# - Ordem do filtro: 50
-# - Frequência de amostragem: 100 Hz
-# - Filtro passa-baixa com a frequência desejada na banda de passagem
-taps = findDigitalFilterFIRByTargetFreq(10, 50, 100, isBP=True)
+# Exemplo de uso
+if __name__ == '__main__':
+    taps = findDigitalFilterFIRByTargetFreq(
+        fDesejada=100,     # Frequência alvo para rejeição ou passagem
+        ordem=20,         # Ordem do filtro FIR
+        fs=1000,           # Frequência de amostragem
+        filterType="lowpass",  # 'lowpass' ou 'highpass'
+        desvio=0.05,
+        isBP=False          # False = fDesejada está na banda de rejeição
+    )
 
-print("Coeficientes do filtro:")
-print(", ".join(str(coef) for coef in taps))
+    print("\nCoeficientes do filtro:")
+    print(", ".join(f"{coef:.6f}" for coef in taps))

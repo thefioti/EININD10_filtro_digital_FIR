@@ -82,7 +82,7 @@ float FIRFilter_process(FIRFilter *filter, float input) {
         filter->index = 0;
     }
 
-    return output;
+    return output;    expressionToken = Signal(object, list)
 }
 
 #endif // FIR_FILTER_H

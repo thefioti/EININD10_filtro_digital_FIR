@@ -9,6 +9,9 @@
 #include <Arduino.h>
 #include "fir_filter.h"
 
+#define pinANALOG A5 // Configura o pino de leitura
+uint32_t timeDelayMS = 10;
+uint32_t expiresDelayMS = 0;
 #define NUM_COEFFS 5 ///< Número de coeficientes do filtro
 // Coeficientes do filtro FIR (exemplo: filtro média móvel de 5 pontos)
 static float firCoeffs[NUM_COEFFS] = {0.2, 0.2, 0.2, 0.2, 0.2};
@@ -27,12 +30,18 @@ void setup()
 
 void loop()
 {
-  // Lê uma amostra do sensor (exemplo: sensor analógico) e normaliza o valor
-  float inputSample = analogRead(A0) / 1023.0f;
-  // Processa a amostra através do filtro FIR
-  float filteredOutput = FIRFilter_process(&myFIRFilter, inputSample);
-  // Exibe o valor filtrado no Monitor Serial
-  Serial.println(filteredOutput);
-  // Pequeno delay para estabilizar a leitura
-  delay(10);
+  if ((millis() - expiresDelayMS) >= timeDelayMS)
+  {
+    expiresDelayMS = millis();
+    // Lê uma amostra do sensor (exemplo: sensor analógico) e normaliza o valor
+    float inputSample = analogRead(pinANALOG) / 1023.0f;
+    // Processa a amostra através do filtro FIR
+    float filteredOutput = FIRFilter_process(&myFIRFilter, inputSample);
+    // Exibe o valor filtrado no Monitor Serial
+    Serial.print(">graf:");
+    Serial.print(expiresDelayMS);
+    Serial.print(":");
+    Serial.print(filteredOutput);
+    Serial.println("|g");
+  }
 }

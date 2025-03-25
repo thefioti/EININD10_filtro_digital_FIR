@@ -2,118 +2,85 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def findAnalogFilterByTargetFreq(fDesejada, ordem, filterType, desvio, isBP):
-    """
-    Calcula a frequência de corte (omega_c) de um filtro analógico Butterworth, 
-    plota a resposta em frequência com as linhas que indicam:
-      - A frequência limite da banda de interesse (passagem ou rejeição)
-      - A frequência de corte escolhida
-      - A frequência desejada
-    e retorna a frequência de corte em Hz.
-
-    Parâmetros:
-      - fDesejada: Frequência desejada (Hz). Será convertida para rad/s.
-      - ordem: Ordem do filtro (número de polos).
-      - filterType: Tipo do filtro: 'lowpass' (passa-baixa) ou 'highpass' (passa-alta).
-      - desvio: Desvio máximo permitido na magnitude (ex.: 0.05 para 5%).
-      - isBP: Booleano. Se True, fDesejada está na banda de passagem; se False, na banda de rejeição.
-    
-    Retorna:
-      - fc_escolhido_hz: Frequência de corte escolhida em Hz.
-    """
-    # Converte a frequência desejada de Hz para rad/s
     omega_d = 2 * np.pi * fDesejada
-
-    # Define a magnitude alvo conforme a banda de interesse:
-    # - Banda de passagem: 1 - desvio
-    # - Banda de rejeição: desvio
     M_target = 1 - desvio if isBP else desvio
 
-    # Pequeno ajuste para garantir que fDesejada fique do lado correto da transição
-    epsilon = 1e-6
+    A = ((1 / (M_target**2)) - 1)**(1 / (2 * ordem))
 
-    # Cálculo de omega_c e omega_edge conforme o tipo de filtro
+    # Calcular omega_c corretamente
     if filterType.lower() == 'lowpass':
-        # Resposta do filtro passa-baixa: |H(jω)| = 1 / sqrt(1 + (ω/omega_c)^(2*ordem))
-        # Relação: omega_edge = omega_c * [ (1/M_target² - 1) ]^(1/(2*ordem))
-        A = ((1 / (M_target**2)) - 1)**(1/(2*ordem))
-        if isBP:
-            # fDesejada deve estar antes da transição (menor que omega_edge)
-            omega_edge = omega_d * (1 + epsilon)
-        else:
-            # fDesejada deve estar depois da transição (maior que omega_edge)
-            omega_edge = omega_d * (1 - epsilon)
-        omega_c = omega_edge / A
-
+        omega_c = omega_d / A
     elif filterType.lower() == 'highpass':
-        # Resposta do filtro passa-alta: |H(jω)| = 1 / sqrt(1 + (omega_c/ω)^(2*ordem))
-        # Relação: omega_edge = omega_c / [ (1/M_target² - 1) ]^(1/(2*ordem))
-        A = ((1 / (M_target**2)) - 1)**(1/(2*ordem))
-        if isBP:
-            # Para passa-alta, fDesejada na banda de passagem deve estar depois da transição
-            omega_edge = omega_d * (1 - epsilon)
-        else:
-            # fDesejada na banda de rejeição deve estar antes da transição
-            omega_edge = omega_d * (1 + epsilon)
-        omega_c = omega_edge * A
-
+        omega_c = omega_d * A
     else:
         raise ValueError("filterType deve ser 'lowpass' ou 'highpass'.")
 
-    # Converte as frequências calculadas de rad/s para Hz
+    # Calcular frequência limite (magnitude = M_target)
+    if filterType.lower() == 'lowpass':
+        omega_edge = omega_c * A
+    else:
+        omega_edge = omega_c / A
+
+    # Frequência complementar (borda da outra banda)
+    M_comp = desvio if isBP else 1 - desvio
+    A_comp = ((1 / (M_comp**2)) - 1)**(1 / (2 * ordem))
+    if filterType.lower() == 'lowpass':
+        omega_comp = omega_c * A_comp
+    else:
+        omega_comp = omega_c / A_comp
+
+    # Converter para Hz
     fc_escolhido_hz = omega_c / (2 * np.pi)
     freq_limite = omega_edge / (2 * np.pi)
+    f_comp_hz = omega_comp / (2 * np.pi)
 
-    # Define a faixa de frequências para o gráfico
-    if filterType.lower() == 'highpass':
-        f_min = fDesejada / 10
-    else:
-        f_min = 0
-    f_max = max(fDesejada, fc_escolhido_hz, freq_limite) * 1.5
-    freqs = np.linspace(f_min, f_max, 500)
-    w = 2 * np.pi * freqs  # Converter para rad/s
+    # Frequências para o gráfico
+    f_min = 0
+    f_max = max(fDesejada, fc_escolhido_hz, freq_limite, f_comp_hz) * 1.5
+    freqs = np.linspace(f_min, f_max, 1000)
+    w = 2 * np.pi * freqs
 
-    # Calcula a resposta em frequência do filtro Butterworth
     if filterType.lower() == 'lowpass':
         H = 1 / np.sqrt(1 + (w / omega_c)**(2 * ordem))
-    else:  # highpass
+    else:
         H = 1 / np.sqrt(1 + (omega_c / w)**(2 * ordem))
 
-    # Cria o gráfico da resposta em frequência
+    # Plotagem
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(freqs, H, label='Resposta do Filtro', color='b')
-    ax.set_xlabel('Frequência (Hz)')
-    ax.set_ylabel('Magnitude')
-    ax.set_title('Resposta em Frequência do Filtro Butterworth')
+    ax.plot(freqs, H, label='Resposta do Filtro Butterworth', color='blue')
+    ax.axvline(fDesejada, color='yellow', linestyle='--', label='Frequência Desejada')
+    ax.axvline(fc_escolhido_hz, color='green', linestyle='--', label='Frequência de Corte')
+    ax.axvline(freq_limite, color='red', linestyle='--', label='Limite da Banda de Interesse')
+    ax.axvline(f_comp_hz, color='purple', linestyle='--', label='Frequência Complementar')
 
-    # Plota a linha vertical da frequência limite (banda de passagem ou rejeição)
-    if isBP:
-        print("Frequência limite da Banda de Passagem [Vermelho]:", freq_limite)
-        ax.axvline(freq_limite, color='r', linestyle='--', label='Banda de Passagem')
-    else:
-        print("Frequência limite da Banda de Rejeição [Vermelho]:", freq_limite)
-        ax.axvline(freq_limite, color='r', linestyle='--', label='Banda de Rejeição')
-
-    # Plota a linha vertical da frequência de corte escolhida
-    print("Frequência de Corte [Verde]:", fc_escolhido_hz)
-    ax.axvline(fc_escolhido_hz, color='g', linestyle='--', label='Frequência de Corte')
-
-    # Plota a linha vertical da frequência desejada
-    print("Frequência Desejada [Amarelo]:", fDesejada)
-    ax.axvline(fDesejada, color='y', linestyle='--', label='Frequência Desejada')
-
+    ax.set_xlim(0, f_max * 1.1)
+    ax.set_ylim(0, 1.1)
+    ax.set_xlabel("Frequência (Hz)")
+    ax.set_ylabel("Magnitude")
+    ax.set_title("Filtro Butterworth - Resposta em Frequência")
     ax.grid(True)
     ax.legend()
+    plt.tight_layout()
     plt.show()
 
-    return fc_escolhido_hz
+    print("Frequência Desejada [Amarelo]:", fDesejada)
+    print("Frequência de Corte [Verde]:", fc_escolhido_hz)
+    print(("Limite da Banda de Passagem" if isBP else "Limite da Banda de Rejeição") + " [Vermelho]:", freq_limite)
+    print("Frequência Complementar (banda oposta) [Roxa]:", f_comp_hz)
 
-# Exemplo de uso:
+    return fc_escolhido_hz, freq_limite, f_comp_hz
+
 if __name__ == '__main__':
-    fDesejada = 1000   # Frequência desejada em Hz
-    ordem = 2
-    filterType = 'lowpass'  # 'lowpass' ou 'highpass'
-    desvio = 0.05      # 5% de desvio
-    isBP = True        # True para banda de passagem; False para rejeição
-
-    fc = findAnalogFilterByTargetFreq(fDesejada, ordem, filterType, desvio, isBP)
+    fc, _, __ = findAnalogFilterByTargetFreq(
+        fDesejada=1000,      # Frequência desejada em Hz
+        ordem=2,
+        filterType='lowpass',
+        desvio=0.05,
+        isBP=True           # Banda de rejeição
+    )
     print("Frequência de Corte escolhida (Hz):", fc)
+
+    # Projeto do filtro Sallen-Key
+    R = 1000  # 1kΩ
+    c = 1 / (2 * np.pi * fc * R)
+    print("Valor da Capacitância (Farads):", c)

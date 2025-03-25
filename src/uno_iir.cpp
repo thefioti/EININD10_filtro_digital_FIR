@@ -12,8 +12,11 @@
  // Definição dos números de coeficientes para os filtros feedforward (b) e feedback (a)
  #define NB_COEFFS 3  ///< Número de coeficientes feedforward (numerador)
  #define NA_COEFFS 3  ///< Número de coeficientes feedback (denominador)
- // Ordem do filtro = max(NB_COEFFS, NA_COEFFS) - 1.
- #define IIR_ORDER ((NB_COEFFS > NA_COEFFS ? NB_COEFFS : NA_COEFFS) - 1)
+ #define IIR_ORDER ((NB_COEFFS > NA_COEFFS ? NB_COEFFS : NA_COEFFS) - 1)// Ordem do filtro = max(NB_COEFFS, NA_COEFFS) - 1.
+ #define pinANALOG A5 // Configura o pino de leitura
+ 
+ uint32_t timeDelayMS = 10;
+ uint32_t expiresDelayMS = 0;
  
  // Exemplo de coeficientes para um filtro IIR (a[0] deve ser 1)
  // Estes coeficientes podem representar, por exemplo, um filtro passa-baixas
@@ -33,15 +36,18 @@
  }
  
  void loop() {
-     // Leitura de uma amostra do sensor (exemplo: sensor analógico) e normalização do valor
-     float inputSample = analogRead(A0) / 1023.0f;
- 
-     // Processa a amostra através do filtro IIR
-     float filteredOutput = IIRFilter_process(&myIIRFilter, inputSample);
- 
-     // Exibe o valor filtrado no Monitor Serial
-     Serial.println(filteredOutput);
- 
-     // Pequeno delay para estabilizar a leitura
-     delay(10);
+     if ((millis() - expiresDelayMS) >= timeDelayMS)
+     {
+       expiresDelayMS = millis();
+       // Lê uma amostra do sensor (exemplo: sensor analógico) e normaliza o valor
+       float inputSample = analogRead(pinANALOG) / 1023.0f;
+       // Processa a amostra através do filtro IIR
+       float filteredOutput = IIRFilter_process(&myIIRFilter, inputSample);
+       // Exibe o valor filtrado no Monitor Serial
+       Serial.print(">graf:");
+       Serial.print(expiresDelayMS);
+       Serial.print(":");
+       Serial.print(filteredOutput);
+       Serial.println("|g");
+     }
  }
